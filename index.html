@@ -53,7 +53,7 @@ canvas{position:absolute;left:0;top:0;width:1280px;height:720px;image-rendering:
 </style></head><body>
 <div id="wrap">
 <canvas id="c" width="1280" height="720"></canvas>
-<div id="menu" class="scr on"><div class="hot" id="bPlay" style="left:854px;top:387px;width:380px;height:97px"></div><div class="hot" id="bAbout" style="left:892px;top:494px;width:311px;height:67px"></div><div class="hot" id="bQuit" style="left:892px;top:568px;width:311px;height:69px"></div></div>
+<div id="menu" class="scr on"><div class="hot" id="bPlay" style="left:854px;top:387px;width:380px;height:97px"></div><div class="hot" id="bAbout" style="left:892px;top:494px;width:311px;height:67px"></div><div class="hot" id="mMus" title="Music" style="left:1094px;top:20px;width:50px;height:50px;border-radius:10px"></div><div class="hot" id="mSfx" title="Sound effects" style="left:1153px;top:20px;width:50px;height:50px;border-radius:10px"></div><div class="hot" id="mFull" title="Fullscreen" style="left:1211px;top:20px;width:50px;height:50px;border-radius:10px"></div><div class="hot" id="bQuit" style="left:892px;top:568px;width:311px;height:69px"></div></div>
 <div id="bye" class="scr"><div class="panel" style="left:390px;top:230px;width:500px;font:30px Impact"><div class="gt" style="font-size:56px">THANKS FOR PLAYING!</div><p style="font:22px 'Trebuchet MS',sans-serif">You can close this tab now.<br>See you on the court, champ &#127936;</p><button class="btn" id="bByeX" style="position:static;width:200px;font-size:28px">BACK</button></div></div>
 <div id="about" class="scr"><div class="panel" style="left:340px;top:150px;width:600px;font:22px 'Trebuchet MS',sans-serif;line-height:1.5"><div style="font:44px Impact;color:#ffc720">HOW TO PLAY</div>
  <p>Press and <b>drag backwards</b> (down-left) to aim &mdash; the further you pull, the more power. <b>Release</b> to shoot.<br>You get <b>10 shots</b>. Each basket = 1 point.<br>Score <b>5 in a row</b> for a BREAKDANCE, +3 bonus and <b>x2 points</b> while the streak lasts!<br>Miss and Dastan cries. A lot.</p><button class="btn" id="bAboutX" style="position:static;width:200px;font-size:28px">BACK</button></div></div>
@@ -76,9 +76,9 @@ function fit(){const s=Math.min(innerWidth/W,innerHeight/H);$('wrap').style.tran
 addEventListener('resize',fit);fit();
 document.addEventListener('touchmove',e=>e.preventDefault(),{passive:false});
 /* ---------- AUDIO (Web Audio, all synthesized) ---------- */
-let AC,mg,msg,sg,nb,muted=false,mv=.5,sv=.8,mode='menu',step=0,nextT=0;
+let AC,mg,msg,sg,nb,mm=false,sm=false,muted=false,mv=.5,sv=.8,mode='menu',step=0,nextT=0;
 const mid=n=>440*Math.pow(2,(n-69)/12);
-function applyVol(){if(!AC)return;mg.gain.value=muted?0:1;msg.gain.value=mv*.4;sg.gain.value=sv}
+function applyVol(){if(!AC)return;mg.gain.value=muted?0:1;msg.gain.value=mm?0:mv*.4;sg.gain.value=sm?0:sv}
 function initAudio(){if(AC){if(AC.state==='suspended')AC.resume();return}
  AC=new(window.AudioContext||window.webkitAudioContext)();mg=AC.createGain();mg.connect(AC.destination);msg=AC.createGain();msg.connect(mg);sg=AC.createGain();sg.connect(mg);
  nb=AC.createBuffer(1,AC.sampleRate,AC.sampleRate);const d=nb.getChannelData(0);for(let i=0;i<d.length;i++)d[i]=Math.random()*2-1;
@@ -88,6 +88,7 @@ function noise(d,v,t,hp,dest){if(!AC)return;t=t||AC.currentTime;const s=AC.creat
 const seq=(notes,gap,d,type,v)=>{if(!AC)return;const n=AC.currentTime;notes.forEach((f,i)=>tone(f,d,type,v,n+i*gap))};
 const sfx={
  click(){tone(880,.06,'square',.2)},
+ hover(){tone(1320,.035,'square',.07)},
  start(){seq([523,659,784,1047,1319],.07,.14,'square',.22)},
  restart(){seq([392,523,659,784],.06,.12,'square',.2)},
  bounce(v){tone(150,.14,'sine',.25+.5*v,0,55);noise(.04,.12*v,0,300)},
@@ -221,6 +222,9 @@ function menuBtns(){const t=performance.now()/1000;ctx.imageSmoothingEnabled=tru
   if(g>0.02){ctx.shadowColor=mbG[id];ctx.shadowBlur=22*g}
   try{ctx.filter=dn?'brightness(.85)':hv?'brightness(1.1)':'none'}catch(e){}
   ctx.drawImage(im,-w/2,-h/2,w,h);ctx.restore()}
+ for(const[id,x,flag]of[['mMus',1094,mm],['mSfx',1153,sm],['mFull',1211,false]]){const el=$(id),hv=el.matches(':hover');
+  if(hv||flag){ctx.save();cut(x,20,50,50,6,12,6,12);ctx.clip();if(flag){ctx.fillStyle='rgba(10,2,30,.55)';ctx.fillRect(x,20,50,50)}if(hv){ctx.fillStyle='rgba(255,255,255,'+(el.matches(':active')?.05:.2)+')';ctx.fillRect(x,20,50,50)}ctx.restore()}
+  if(flag){ctx.strokeStyle='#12052a';ctx.lineWidth=8;ctx.lineCap='round';ctx.beginPath();ctx.moveTo(x+9,29);ctx.lineTo(x+41,61);ctx.stroke();ctx.strokeStyle='#ff5a7a';ctx.lineWidth=4;ctx.stroke()}}
  ctx.imageSmoothingEnabled=false}
 function render(){ctx.imageSmoothingEnabled=false;ctx.save();if(shake>0)ctx.translate((Math.random()-.5)*shake*16,(Math.random()-.5)*shake*16);
  if(st==='menu'){ctx.drawImage(menuImg,0,0,W,H);menuBtns();ctx.restore();return}
@@ -252,6 +256,10 @@ on('bResume',()=>{sfx.click();setPause(false)});on('bRestart1',()=>{sfx.restart(
 on('bAgain',()=>{sfx.restart();startGame()});on('bMenu2',()=>{sfx.click();toMenu()});on('bPause',()=>{sfx.click();setPause(true)});
 on('bMute',()=>{muted=!muted;$('bMute').classList.toggle('off',muted);applyVol();if(!muted)sfx.click()});
 on('bFull',()=>{try{const d=document,e=d.documentElement;if(d.fullscreenElement||d.webkitFullscreenElement)(d.exitFullscreen||d.webkitExitFullscreen).call(d);else(e.requestFullscreen||e.webkitRequestFullscreen).call(e)}catch(_){}});
+on('mMus',()=>{mm=!mm;applyVol();if(!mm)sfx.click()});
+on('mSfx',()=>{sm=!sm;applyVol();if(!sm)sfx.click()});
+$('mFull').addEventListener('click',()=>$('bFull').click());
+for(const id of['bPlay','bAbout','bQuit','mMus','mSfx','mFull'])$(id).addEventListener('mouseenter',()=>{if(AC&&AC.state==='running')sfx.hover()});
 $('rMus').oninput=e=>{mv=e.target.value/100;applyVol()};$('rSfx').oninput=e=>{sv=e.target.value/100;applyVol()};$('rSfx').onchange=()=>{initAudio();sfx.click()};
 addEventListener('keydown',e=>{if(e.key==='Escape'||e.key==='p'||e.key==='P')setPause(st!=='paused')});
 document.addEventListener('visibilitychange',()=>{if(document.hidden)setPause(true)});
